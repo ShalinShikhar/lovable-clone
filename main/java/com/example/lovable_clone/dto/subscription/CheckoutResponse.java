@@ -1,0 +1,6 @@
+package com.example.lovable_clone.dto.subscription;
+
+public record CheckoutResponse(
+        String checkoutUrl
+) {
+}
