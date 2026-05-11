@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/projects/{project}/members")
 @RequiredArgsConstructor
@@ -16,7 +18,7 @@ public class ProjectMemberController {
     private final ProjectMemberService projectMemberService;
 
     @GetMapping
-    public ResponseEntity<MemberResponse> getProjectMemebers(@PathVariable Long projectId)
+    public ResponseEntity<List<MemberResponse>> getProjectMembers(@PathVariable Long projectId)
     {
         Long userId=1L;
         return ResponseEntity.ok(projectMemberService.getProjectMembers(projectId,userId));
@@ -38,9 +40,9 @@ public class ProjectMemberController {
         return ResponseEntity.ok(projectMemberService.updateMemberRole(projectId,memberId,request,userId));
     }
     @DeleteMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> deleteProjectMember(@PathVariable Long projectId,@PathVariable Long memberId,@RequestBody updateRoleRequest request)
+    public ResponseEntity<MemberResponse> deleteMember(@PathVariable Long projectId,@PathVariable Long memberId)
     {
         Long userId=1L;
-        return ResponseEntity.ok(projectMemberService.deleteProjectMember(projectId,memberId,request,userId));
+        return ResponseEntity.ok(projectMemberService.deleteProjectMember(projectId,memberId,userId));
     }
 }
