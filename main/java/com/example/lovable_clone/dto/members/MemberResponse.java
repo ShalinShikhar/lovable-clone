@@ -5,11 +5,10 @@ import com.example.lovable_clone.enums.ProjectRole;
 import java.time.Instant;
 
 public record MemberResponse(
-        Long id,
+        Long userId,
         String email,
         String name,
-        String avatarurl,
         Instant invitedAt,
-        ProjectRole role
+        ProjectRole projectRole
 ) {
 }

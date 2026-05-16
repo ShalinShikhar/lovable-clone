@@ -3,6 +3,7 @@ package com.example.lovable_clone.controllers;
 import com.example.lovable_clone.dto.members.InviteMemberRequest;
 import com.example.lovable_clone.dto.members.MemberResponse;
 import com.example.lovable_clone.dto.members.updateRoleRequest;
+import com.example.lovable_clone.repository.ProjectMemberRepository;
 import com.example.lovable_clone.service.ProjectMemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +12,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/projects/{project}/members")
+@RequestMapping("/api/projects/{projectId}/members")
 @RequiredArgsConstructor
 public class ProjectMemberController {
 
     private final ProjectMemberService projectMemberService;
-
+    private final ProjectMemberRepository projectMemberRepository;
     @GetMapping
     public ResponseEntity<List<MemberResponse>> getProjectMembers(@PathVariable Long projectId)
     {
