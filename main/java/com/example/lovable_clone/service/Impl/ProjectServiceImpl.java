@@ -4,8 +4,13 @@ import com.example.lovable_clone.dto.project.ProjectRequest;
 import com.example.lovable_clone.dto.project.ProjectResponse;
 import com.example.lovable_clone.dto.project.ProjectSummaryResponse;
 import com.example.lovable_clone.entity.Project;
+import com.example.lovable_clone.entity.ProjectMember;
+import com.example.lovable_clone.entity.ProjectMemberId;
 import com.example.lovable_clone.entity.User;
+import com.example.lovable_clone.enums.ProjectRole;
+import com.example.lovable_clone.error.ResourceNotFoundException;
 import com.example.lovable_clone.mapper.ProjectMapper;
+import com.example.lovable_clone.repository.ProjectMemberRepository;
 import com.example.lovable_clone.repository.ProjectRepository;
 import com.example.lovable_clone.repository.UserRepository;
 import com.example.lovable_clone.service.ProjectService;
@@ -28,6 +33,7 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectRepository projectRepository;
     UserRepository  userRepository;
     ProjectMapper projectMapper;
+    ProjectMemberRepository projectMemberRepository;
 
     @Override
     public List<ProjectSummaryResponse> getUserProjects(Long userId) {
@@ -38,17 +44,14 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectResponse getUserProjectById(Long id, Long userId) {
-        Project project=projectRepository.findAccessibleProjectById(id,userId).orElseThrow();
+        Project project=getAccessibleProjectById(id,userId);
         return projectMapper.toProjectResponse(project);
     }
 
     @Override
     public ProjectResponse updateProject(long id, ProjectRequest request, Long userId) {
-        Project project=projectRepository.findAccessibleProjectById(id,userId).orElseThrow();
-        if(!project.getOwner().getId().equals(userId))
-        {
-            throw new RuntimeException("U are not allowed to delete");
-        }
+        Project project=getAccessibleProjectById(id,userId);;
+
         project.setName(request.name());
         project=projectRepository.save(project);
         return projectMapper.toProjectResponse(project);
@@ -57,10 +60,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public void softDelete(Long id, Long userId) {
             Project project=getAccessibleProjectById(id,userId);
-            if(!project.getOwner().getId().equals(userId))
-            {
-                throw new RuntimeException("U are not allowed to delete");
-            }
+
             project.setDeletedAt(Instant.now());
             projectRepository.save(project);
     }
@@ -68,8 +68,12 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
 
     public ProjectResponse createProject(ProjectRequest request, Long userId) {
-        User owner=userRepository.findById(userId).orElseThrow();
-        Project project=Project.builder().name(request.name()).owner(owner).isPublic(false).build();
+        User owner=userRepository.findById(userId).orElseThrow(()->new ResourceNotFoundException("User",userId.toString()));
+        Project project=Project.builder().name(request.name()).isPublic(false).build();
+        project = projectRepository.save(project);
+        ProjectMemberId projectMemberId=new ProjectMemberId(project.getId(), owner.getId());
+        ProjectMember projectMember=ProjectMember.builder().projectRole(ProjectRole.OWNER).user(owner).acceptedAt(Instant.now()).invitedAt(Instant.now()).project(project).id(projectMemberId).build();
+        projectMemberRepository.save(projectMember);
         project=projectRepository.save(project);
         return projectMapper.toProjectResponse(project);
     }
@@ -77,6 +81,6 @@ public class ProjectServiceImpl implements ProjectService {
     //Internal function
     public Project getAccessibleProjectById(Long projectId,Long userId)
     {
-        return projectRepository.findAccessibleProjectById(projectId,userId).orElseThrow();
+        return projectRepository.findAccessibleProjectById(projectId,userId).orElseThrow(()->new ResourceNotFoundException("Project",projectId.toString()));
     }
 }

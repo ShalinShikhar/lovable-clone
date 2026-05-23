@@ -7,6 +7,7 @@ import com.example.lovable_clone.entity.Project;
 import com.example.lovable_clone.entity.ProjectMember;
 import com.example.lovable_clone.entity.ProjectMemberId;
 import com.example.lovable_clone.entity.User;
+import com.example.lovable_clone.error.ResourceNotFoundException;
 import com.example.lovable_clone.mapper.ProjectMemberMapper;
 import com.example.lovable_clone.mapper.UserMapper;
 import com.example.lovable_clone.repository.ProjectMemberRepository;
@@ -36,20 +37,15 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     public List<MemberResponse> getProjectMembers(Long projectId, Long userId) {
         Project project=getAccessibleProjectById(projectId,userId);
-        List<MemberResponse> memberResponseList=new ArrayList<>();
-        memberResponseList.add(projectMemberMapper.toProjectMemberResponse(project.getOwner()));
-        memberResponseList.addAll(projectMemberRepository.findByIdProjectId(projectId).stream().map(projectMemberMapper::toProjectMemberResponseFromMember).toList());
+        List<MemberResponse> memberResponseList=projectMemberRepository.findByIdProjectId(projectId).stream().map(projectMemberMapper::toProjectMemberResponseFromMember).toList();
         return memberResponseList;
     }
 
     @Override
     public MemberResponse inviteMember(Long projectId, InviteMemberRequest request, Long userId) {
         Project project=getAccessibleProjectById(projectId,userId);
-        if(!project.getOwner().getId().equals(userId))
-        {
-            throw new RuntimeException("Not allowed");
-        }
-        User invitee = userRepository.findByEmail(request.email()).orElseThrow();
+
+        User invitee = userRepository.findByUsername(request.username()).orElseThrow();
         if(invitee.getId().equals(userId))
         {
             throw new RuntimeException("cannot invite yourself");
@@ -68,15 +64,30 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     @Override
     public MemberResponse updateMemberRole(Long projectId, Long memberId, updateRoleRequest request, Long userId) {
-        return null;
+        Project project=getAccessibleProjectById(projectId,userId);
+
+        ProjectMemberId projectMemberId=new ProjectMemberId(projectId,memberId);
+        ProjectMember projectMember=projectMemberRepository.findById(projectMemberId).orElseThrow();
+        projectMember.setProjectRole(request.role());
+        projectMemberRepository.save(projectMember);
+        return projectMemberMapper.toProjectMemberResponseFromMember(projectMember);
     }
 
     @Override
-    public MemberResponse deleteProjectMember(Long projectId, Long memberId, Long userId) {
-        return null;
+    public void removeProjectMember(Long projectId, Long memberId, Long userId) {
+        Project project=getAccessibleProjectById(projectId,userId);
+
+        ProjectMemberId projectMemberId=new ProjectMemberId(projectId,memberId);
+        if(!projectMemberRepository.existsById(projectMemberId))
+        {
+            throw new RuntimeException("no member with id exist");
+        }
+        projectMemberRepository.deleteById(projectMemberId);
+
     }
     public Project getAccessibleProjectById(Long projectId, Long userId)
     {
         return projectRepository.findAccessibleProjectById(projectId,userId).orElseThrow();
+
     }
 }

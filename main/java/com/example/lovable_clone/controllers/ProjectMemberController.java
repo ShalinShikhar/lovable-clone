@@ -5,6 +5,7 @@ import com.example.lovable_clone.dto.members.MemberResponse;
 import com.example.lovable_clone.dto.members.updateRoleRequest;
 import com.example.lovable_clone.repository.ProjectMemberRepository;
 import com.example.lovable_clone.service.ProjectMemberService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,22 +29,23 @@ public class ProjectMemberController {
     @PostMapping
     public ResponseEntity<MemberResponse> invitedMember(
         @PathVariable Long projectId,
-        @RequestBody InviteMemberRequest request
+        @RequestBody @Valid InviteMemberRequest request
     ){
         Long userId=1L;
         return ResponseEntity.ok(projectMemberService.inviteMember(projectId,request,userId));
     }
 
     @PatchMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> updateMemberRole(@PathVariable Long projectId,@PathVariable Long memberId,@RequestBody updateRoleRequest request)
+    public ResponseEntity<MemberResponse> updateMemberRole(@PathVariable Long projectId,@PathVariable Long memberId,@RequestBody @Valid updateRoleRequest request)
     {
         Long userId=1L;
         return ResponseEntity.ok(projectMemberService.updateMemberRole(projectId,memberId,request,userId));
     }
     @DeleteMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> deleteMember(@PathVariable Long projectId,@PathVariable Long memberId)
+    public ResponseEntity<Void> deleteMember(@PathVariable Long projectId,@PathVariable Long memberId)
     {
         Long userId=1L;
-        return ResponseEntity.ok(projectMemberService.deleteProjectMember(projectId,memberId,userId));
+        projectMemberService.removeProjectMember(projectId,memberId,userId);
+        return ResponseEntity.noContent().build();
     }
 }
