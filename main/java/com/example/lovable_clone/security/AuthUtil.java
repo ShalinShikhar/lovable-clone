@@ -4,7 +4,11 @@ import com.example.lovable_clone.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -37,5 +41,17 @@ public class AuthUtil {
         Long userId= Long.valueOf(claims.get("userId",String.class));
         String username=claims.getSubject();
         return new JwtUserPrincipal(userId,username,new ArrayList<>());
+    }
+
+    public Long getCurrentUserId()
+    {
+       Authentication authentication= SecurityContextHolder.getContext().getAuthentication();
+        if(authentication==null || !(authentication.getPrincipal() instanceof JwtUserPrincipal))
+        {
+            throw  new AuthenticationCredentialsNotFoundException("No Jwt found");
+        }
+        JwtUserPrincipal user= (JwtUserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return user.userId();
+
     }
 }
