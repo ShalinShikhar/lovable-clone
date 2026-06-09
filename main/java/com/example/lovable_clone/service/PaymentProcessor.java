@@ -3,10 +3,10 @@ package com.example.lovable_clone.service;
 import com.example.lovable_clone.dto.subscription.CheckoutRequest;
 import com.example.lovable_clone.dto.subscription.CheckoutResponse;
 import com.example.lovable_clone.dto.subscription.PortalResponse;
-import com.example.lovable_clone.dto.subscription.SubscriptionResponse;
-import org.jspecify.annotations.Nullable;
 
-public interface SubscriptionService {
-    SubscriptionResponse getCurrentSubscription();
+public interface PaymentProcessor {
 
+    CheckoutResponse createCheckoutSessionUrl(CheckoutRequest request);
+
+    PortalResponse openCustomerPortal();
 }
