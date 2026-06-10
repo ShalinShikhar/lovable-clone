@@ -9,4 +9,5 @@ public interface PaymentProcessor {
     CheckoutResponse createCheckoutSessionUrl(CheckoutRequest request);
 
     PortalResponse openCustomerPortal();
+
 }

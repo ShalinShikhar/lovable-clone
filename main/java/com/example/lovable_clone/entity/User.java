@@ -37,6 +37,9 @@ public class User implements UserDetails {
     Instant updatedAt;
     Instant deletedAt;//soft delete(not deleted from DB but get rid of the user)
 
+    @Column(unique = true)
+    String stripeCustomerId;// for uniqueness of user in stripe.
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();

@@ -4,8 +4,10 @@ import com.example.lovable_clone.dto.subscription.CheckoutRequest;
 import com.example.lovable_clone.dto.subscription.CheckoutResponse;
 import com.example.lovable_clone.dto.subscription.PortalResponse;
 import com.example.lovable_clone.entity.Plan;
+import com.example.lovable_clone.entity.User;
 import com.example.lovable_clone.error.ResourceNotFoundException;
 import com.example.lovable_clone.repository.PlanRepository;
+import com.example.lovable_clone.repository.UserRepository;
 import com.example.lovable_clone.security.AuthUtil;
 import com.example.lovable_clone.service.PaymentProcessor;
 import com.stripe.exception.StripeException;
@@ -21,6 +23,7 @@ public class StripePaymentProcessor implements PaymentProcessor {
 
     private final AuthUtil authUtil;
     private final PlanRepository planRepository;
+    private final UserRepository userRepository;
     @Value("${client.url}")
     private String frontendUrl;
 
@@ -29,8 +32,8 @@ public class StripePaymentProcessor implements PaymentProcessor {
 
         Plan plan= (Plan) planRepository.findById(request.planId()).orElseThrow(()->new ResourceNotFoundException("Plan",request.planId().toString()));
         Long userId=authUtil.getCurrentUserId();
-
-        SessionCreateParams params = SessionCreateParams.builder()
+        User user=userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("user",userId.toString()));
+        var params = SessionCreateParams.builder()
                 .addLineItem(
                         SessionCreateParams.LineItem.builder().setPrice(plan.getStripePriceID()).setQuantity(1L).build())
                 .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
@@ -40,10 +43,18 @@ public class StripePaymentProcessor implements PaymentProcessor {
                 .setSuccessUrl(frontendUrl + "/success.html?session_id={CHECKOUT_SESSION_ID}")
                 .setCancelUrl(frontendUrl + "/cancel.html")
                 .putMetadata("user_id",userId.toString())
-                .putMetadata("plan_id",plan.getId().toString())
-                .build();
+                .putMetadata("plan_id",plan.getId().toString());
+
         try {
-            Session session = Session.create(params);
+            String stripeCustomerId= user.getStripeCustomerId();
+            if(stripeCustomerId==null || stripeCustomerId.isEmpty())
+            {
+                params.setCustomerEmail(user.getUsername());
+            }
+            else {
+                params.setCustomer(stripeCustomerId);
+            }
+            Session session = Session.create(params.build());
             return new CheckoutResponse(session.getUrl());
         } catch (StripeException e) {
             throw new RuntimeException(e);
