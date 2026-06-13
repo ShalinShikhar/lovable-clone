@@ -8,6 +8,7 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.StripeObject;
+import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import lombok.RequiredArgsConstructor;
@@ -90,7 +91,11 @@ public class BillingController {
             {
                 metadata=session.getMetadata();
             }
-
+            else if(stripeObject instanceof Subscription subscription)
+            {
+                metadata = subscription.getMetadata();
+            }
+            log.info(event.getType());
             paymentProcessor.handleWebhookEvent(event.getType(),stripeObject,metadata);
             return ResponseEntity.ok().build();
 

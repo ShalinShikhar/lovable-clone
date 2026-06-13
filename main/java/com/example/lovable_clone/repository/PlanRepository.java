@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface PlanRepository extends JpaRepository<Plan,Long> {
-    Optional<Plan> findById(Long aLong);
+    Optional<Plan> findById(Long id);
 
-    Optional<Plan> findByStripePriceId(String id);
+    Optional<Plan> findByStripePriceID(String id);
 }
