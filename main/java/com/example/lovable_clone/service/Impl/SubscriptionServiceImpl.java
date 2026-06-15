@@ -15,9 +15,11 @@ import com.example.lovable_clone.repository.SubscriptionRepository;
 import com.example.lovable_clone.repository.UserRepository;
 import com.example.lovable_clone.security.AuthUtil;
 import com.example.lovable_clone.service.SubscriptionService;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -26,6 +28,7 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level=AccessLevel.PRIVATE)
+@Slf4j
 public class SubscriptionServiceImpl implements SubscriptionService {
 
     AuthUtil authUtil;
@@ -80,17 +83,71 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    @Transactional
     public void updateSubscription(String subscriptionId, SubscriptionStatus status, Instant periodStart, Instant periodEnd, Long planId, Boolean cancelAtPeriodEnd) {
+
+        Subscription subscription=getSubscription(subscriptionId);
+        boolean subscriptionHasBeenUpdated=false;
+
+        if(status!=null  && subscription.getStatus()!=status)
+        {
+            subscription.setStatus(status);
+            subscriptionHasBeenUpdated=true;
+        }
+        if(periodStart!=null && !periodStart.equals(subscription.getCurrentPeriodStart()))
+        {
+            subscription.setCurrentPeriodStart(periodStart);
+            subscriptionHasBeenUpdated=true;
+        }
+        if(periodEnd!=null && !periodEnd.equals(subscription.getCurrentPeriodEnd()))
+        {
+            subscription.setCurrentPeriodStart(periodEnd);
+            subscriptionHasBeenUpdated=true;
+        }
+
+        if(cancelAtPeriodEnd!=null && cancelAtPeriodEnd!=subscription.isCancelAtPeriodEnd())
+        {
+             subscription.setCancelAtPeriodEnd(cancelAtPeriodEnd);
+            subscriptionHasBeenUpdated=true;
+        }
+
+        if(planId != null && subscription.getPlan().getId()!=planId)
+        {
+            Plan plan=getPlan(planId);
+            subscription.setPlan(plan);
+            subscriptionHasBeenUpdated=true;
+        }
+
+        if(subscriptionHasBeenUpdated)
+        {
+            log.debug("Subscription has been updated {}",subscriptionId);
+            subscriptionRepository.save(subscription);
+        }
 
     }
 
     @Override
     public void cancelSubscription(String id) {
+        Subscription subscription=getSubscription(id);
+        subscription.setStatus(SubscriptionStatus.CANCELLED);
+        subscriptionRepository.save(subscription);
 
     }
 
     @Override
     public void markSubscriptionPastDue(String subId) {
+
+        Subscription subscription=getSubscription(subId);
+        if(subscription.getStatus() == SubscriptionStatus.PAST_DUE)
+        {
+            log.debug("Subscription is already past due id : {}",subId);
+            return;
+        }
+        subscription.setStatus(SubscriptionStatus.PAST_DUE);
+        subscriptionRepository.save(subscription);
+
+
+
 
     }
 

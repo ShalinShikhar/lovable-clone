@@ -33,6 +33,7 @@ public class Subscription {
 
     Instant currentPeriodStart;
     Instant currentPeriodEnd;
+
     boolean cancelAtPeriodEnd=false;
 
     @CreationTimestamp

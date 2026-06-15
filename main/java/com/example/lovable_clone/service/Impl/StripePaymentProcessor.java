@@ -6,6 +6,7 @@ import com.example.lovable_clone.dto.subscription.PortalResponse;
 import com.example.lovable_clone.entity.Plan;
 import com.example.lovable_clone.entity.User;
 import com.example.lovable_clone.enums.SubscriptionStatus;
+import com.example.lovable_clone.error.BadRequestException;
 import com.example.lovable_clone.error.ResourceNotFoundException;
 import com.example.lovable_clone.repository.PlanRepository;
 import com.example.lovable_clone.repository.SubscriptionRepository;
@@ -44,7 +45,7 @@ public class StripePaymentProcessor implements PaymentProcessor {
 
         Plan plan= (Plan) planRepository.findById(request.planId()).orElseThrow(()->new ResourceNotFoundException("Plan",request.planId().toString()));
         Long userId=authUtil.getCurrentUserId();
-        User user=userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("user",userId.toString()));
+        User user = getUser(userId);
         var params = SessionCreateParams.builder()
                 .addLineItem(
                         SessionCreateParams.LineItem.builder().setPrice(plan.getStripePriceID()).setQuantity(1L).build())
@@ -75,9 +76,32 @@ public class StripePaymentProcessor implements PaymentProcessor {
 
     }
 
+    private User getUser(Long userId) {
+        User user=userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("user", userId.toString()));
+        return user;
+    }
+
     @Override
     public PortalResponse openCustomerPortal() {
-        return null;
+        Long userId=authUtil.getCurrentUserId();
+        User user=getUser(userId);
+        String stripeCustomerId= user.getStripeCustomerId();
+        if(stripeCustomerId==null  || stripeCustomerId.isEmpty()){
+            throw new BadRequestException("User does not have a Stripe customer id : "+ userId);
+        }
+        try {
+            var portalSession = com.stripe.model.billingportal.Session.create(
+                    com.stripe.param.billingportal.SessionCreateParams.builder()
+                            .setCustomer(stripeCustomerId)
+                            .setReturnUrl(frontendUrl)
+                            .build()
+            );
+
+            return new PortalResponse(portalSession.getUrl());
+        } catch (StripeException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
@@ -191,8 +215,8 @@ public class StripePaymentProcessor implements PaymentProcessor {
             Long planId= Long.parseLong(metaData.get("plan_id"));
             String subscriptionId=subscription.getId();
             String customerId=subscription.getCustomer();
-            User user=userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("user",userId.toString()));
-            if(user.getStripeCustomerId()==null)
+            User user = getUser(userId);
+        if(user.getStripeCustomerId()==null)
             {
                 user.setStripeCustomerId(customerId);
                 userRepository.save(user);
@@ -208,7 +232,7 @@ public class StripePaymentProcessor implements PaymentProcessor {
         }
         Long userId= Long.parseLong(metaData.get("user_id"));
         String customerId=session.getCustomer();
-        User user=userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("user",userId.toString()));
+        User user = getUser(userId);
         if(user.getStripeCustomerId()==null)
         {
             user.setStripeCustomerId(customerId);
