@@ -11,6 +11,7 @@ import com.example.lovable_clone.enums.SubscriptionStatus;
 import com.example.lovable_clone.error.ResourceNotFoundException;
 import com.example.lovable_clone.mapper.SubscriptionMapper;
 import com.example.lovable_clone.repository.PlanRepository;
+import com.example.lovable_clone.repository.ProjectMemberRepository;
 import com.example.lovable_clone.repository.SubscriptionRepository;
 import com.example.lovable_clone.repository.UserRepository;
 import com.example.lovable_clone.security.AuthUtil;
@@ -36,6 +37,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     SubscriptionMapper subscriptionMapper;
     UserRepository userRepository;
     PlanRepository planRepository;
+    ProjectMemberRepository projectMemberRepository;
+    private final Integer FREE_TIER_PROJECTS_ALLOWED=100;
 
     @Override
     public void renewSubscriptionPeriod(String gatewaySubscriptionId, Instant periodStart, Instant periodEnd) {
@@ -148,6 +151,19 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
 
 
+
+    }
+
+    @Override
+    public boolean canCreateNewProject() {
+        Long userId= authUtil.getCurrentUserId();
+        SubscriptionResponse currentSubscription=getCurrentSubscription();
+        int countOfOwnedPojects= projectMemberRepository.countProjectOwnedByUser(userId);
+        if(currentSubscription.plan()==null)
+        {
+            return countOfOwnedPojects<FREE_TIER_PROJECTS_ALLOWED;
+        }
+        return countOfOwnedPojects < currentSubscription.plan().maxProjects();
 
     }
 

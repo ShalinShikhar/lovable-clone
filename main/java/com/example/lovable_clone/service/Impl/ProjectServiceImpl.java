@@ -8,6 +8,7 @@ import com.example.lovable_clone.entity.ProjectMember;
 import com.example.lovable_clone.entity.ProjectMemberId;
 import com.example.lovable_clone.entity.User;
 import com.example.lovable_clone.enums.ProjectRole;
+import com.example.lovable_clone.error.BadRequestException;
 import com.example.lovable_clone.error.ResourceNotFoundException;
 import com.example.lovable_clone.mapper.ProjectMapper;
 import com.example.lovable_clone.repository.ProjectMemberRepository;
@@ -15,6 +16,7 @@ import com.example.lovable_clone.repository.ProjectRepository;
 import com.example.lovable_clone.repository.UserRepository;
 import com.example.lovable_clone.security.AuthUtil;
 import com.example.lovable_clone.service.ProjectService;
+import com.example.lovable_clone.service.SubscriptionService;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,7 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectMapper projectMapper;
     ProjectMemberRepository projectMemberRepository;
     AuthUtil authUtil;
+    SubscriptionService subscriptionService;
     @Override
     public List<ProjectSummaryResponse> getUserProjects() {
 //            return projectRepository.findAllAccessibleByUser(userId).stream().map(projectMapper::toProjectSummaryResponse).collect(Collectors.toList());
@@ -77,9 +80,15 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
 
     public ProjectResponse createProject(ProjectRequest request) {
+
+        if(subscriptionService.canCreateNewProject())
+        {
+            throw new BadRequestException("User can't create a new project with current plan upgrade plan now");
+        }
         Long userId= authUtil.getCurrentUserId();
 //        User owner=userRepository.findById(userId).orElseThrow(()->new ResourceNotFoundException("User",userId.toString()));
         User owner=userRepository.getReferenceById(userId);
+
         Project project=Project.builder().name(request.name()).isPublic(false).build();
         project = projectRepository.save(project);
         ProjectMemberId projectMemberId=new ProjectMemberId(project.getId(), owner.getId());
