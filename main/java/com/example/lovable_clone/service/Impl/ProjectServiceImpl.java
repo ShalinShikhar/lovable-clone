@@ -16,6 +16,7 @@ import com.example.lovable_clone.repository.ProjectRepository;
 import com.example.lovable_clone.repository.UserRepository;
 import com.example.lovable_clone.security.AuthUtil;
 import com.example.lovable_clone.service.ProjectService;
+import com.example.lovable_clone.service.ProjectTemplateService;
 import com.example.lovable_clone.service.SubscriptionService;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -40,6 +41,8 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectMemberRepository projectMemberRepository;
     AuthUtil authUtil;
     SubscriptionService subscriptionService;
+    ProjectTemplateService projectTemplateService;
+
     @Override
     public List<ProjectSummaryResponse> getUserProjects() {
 //            return projectRepository.findAllAccessibleByUser(userId).stream().map(projectMapper::toProjectSummaryResponse).collect(Collectors.toList());
@@ -78,10 +81,8 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-
     public ProjectResponse createProject(ProjectRequest request) {
-
-        if(subscriptionService.canCreateNewProject())
+        if(!subscriptionService.canCreateNewProject())
         {
             throw new BadRequestException("User can't create a new project with current plan upgrade plan now");
         }
@@ -95,6 +96,7 @@ public class ProjectServiceImpl implements ProjectService {
         ProjectMember projectMember=ProjectMember.builder().projectRole(ProjectRole.OWNER).user(owner).acceptedAt(Instant.now()).invitedAt(Instant.now()).project(project).id(projectMemberId).build();
         projectMemberRepository.save(projectMember);
         project=projectRepository.save(project);
+        projectTemplateService.initializeProjectFromTemplate(project.getId());
         return projectMapper.toProjectResponse(project);
     }
 

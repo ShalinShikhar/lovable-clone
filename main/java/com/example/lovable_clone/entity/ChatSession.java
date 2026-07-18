@@ -1,22 +1,21 @@
 package com.example.lovable_clone.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 
+@Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Getter
 @Setter
-@Table(name="chat_session")
-@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ChatSession {
-
     @EmbeddedId
     ChatSessionId id;
 
