@@ -8,9 +8,9 @@ import java.time.Instant;
 import java.util.List;
 
 public record ChatResponse(
-        ChatSession chatSession,
+        Long id,
         MessageRole role,
-        List<ChatEvent> events,
+        List<ChatEventResponse> events,
         String content,
         Integer tokenUsed,
         Instant createdAt

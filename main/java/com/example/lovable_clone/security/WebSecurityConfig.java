@@ -1,6 +1,7 @@
 package com.example.lovable_clone.security;
 
 import com.example.lovable_clone.error.ApiError;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,10 +37,16 @@ public class WebSecurityConfig {
 
         httpSecurity.
                 csrf(csrfConfig->csrfConfig.disable()).
+                cors(Customizer.withDefaults()).
                 sessionManagement(sessionConfig->sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth->
                         auth.requestMatchers("/api/auth/**","/error","/webhooks/**").permitAll()
-                                .anyRequest().authenticated())
+                                .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
+                                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                                .anyRequest().authenticated()
+
+                )
+
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
 

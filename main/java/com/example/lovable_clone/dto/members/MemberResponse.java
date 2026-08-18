@@ -9,6 +9,6 @@ public record MemberResponse(
         String username,
         String name,
         Instant invitedAt,
-        ProjectRole projectRole
+        ProjectRole role
 ) {
 }
