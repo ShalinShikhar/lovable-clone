@@ -13,17 +13,18 @@ import java.util.Optional;
 public interface ProjectRepository extends JpaRepository<Project,Long> {
 
     @Query("""
-    SELECT p as Project,pm.projectRole as role FROM Project p
-    JOIN ProjectMember pm ON pm.project = p
-    WHERE p.deletedAt IS NULL
+    SELECT pm.project AS project, pm.projectRole AS role
+    FROM ProjectMember pm
+    WHERE pm.project.deletedAt IS NULL
       AND pm.user.id = :userId
-    ORDER BY p.updatedAt DESC""")
+    ORDER BY pm.project.updatedAt DESC
+    """)
     List<ProjectWithRole> findAllAccessibleByUser(@Param("userId") Long userId);
 
     @Query("SELECT p from Project p JOIN ProjectMember pm ON pm.project = p WHERE  p.id = :projectId AND p.deletedAt IS NULL AND pm.user.id =:userId")
     Optional<Project> findAccessibleProjectById(@Param("projectId")Long projectId,@Param("userId")Long userId);
 
-    @Query("SELECT p as Project,pm.projectRole as role FROM Project p JOIN ProjectMember pm ON pm.project = p WHERE  p.id = :projectId AND p.deletedAt IS NULL AND pm.user.id =:userId")
+    @Query("SELECT p AS project, pm.projectRole AS role FROM Project p JOIN ProjectMember pm ON pm.project = p WHERE  p.id = :projectId AND p.deletedAt IS NULL AND pm.user.id =:userId")
     Optional<ProjectWithRole> findAccessibleProjectByIdWithRole(@Param("projectId")Long projectId,@Param("userId")Long userId);
 
     interface  ProjectWithRole{

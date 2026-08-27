@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/projects/{projectid}/files")
+@RequestMapping("/api/projects/{projectId}/files")
 @RequiredArgsConstructor
 public class FileController {
     private final ProjectFileService projectFileService;
